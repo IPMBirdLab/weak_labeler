@@ -1,9 +1,28 @@
 from typing import List
-from skimage.measure import compare_ssim
 from skimage.transform import resize
 from scipy.stats import wasserstein_distance
 import numpy as np
 import cv2
+
+import sys
+from packaging import version
+
+# version parse and comparison : https://stackoverflow.com/questions/11887762/how-do-i-compare-version-numbers-in-python/21065570
+# python package version check : https://stackoverflow.com/questions/20180543/how-to-check-version-of-python-modules
+# pyhton version check : https://stackoverflow.com/questions/1093322/how-do-i-check-what-version-of-python-is-running-my-script
+if sys.version_info >= (3, 8):
+  from importlib.metadata import version as get_version
+else:
+  import pkg_resources
+  get_version = lambda pkg_name: pkg_resources.get_distribution(pkg_name).version
+
+
+# backward compatiblity for depricated function :
+# https://scikit-image.org/docs/stable/api/skimage.metrics.html?highlight=compare_ssim#skimage.metrics.structural_similarity
+if version.parse(get_version('scikit_image')) >= version.parse('0.16'):
+  from skimage.metrics import structural_similarity
+else:
+  from skimage.measure import compare_ssim as structural_similarity
 
 from VideoToolkit.bbox_ops import crop_patch
 import math
@@ -71,7 +90,7 @@ def structural_sim(img_a, img_b):
     {float} a float {-1:1} that measures structural similarity
       between the input images
   '''
-  sim, diff = compare_ssim(img_a, img_b, full=True)
+  sim, diff = structural_similarity(img_a, img_b, full=True)
 
   return sim
 
