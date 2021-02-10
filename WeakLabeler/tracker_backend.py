@@ -2,7 +2,7 @@ import skimage.measure
 import numpy as np
 import cv2
 
-from VideoToolkit.tools import bbox_from_mask
+from VideoToolkit.tools import bbox_from_mask, rescal_to_image
 
 from VideoToolkit.bbox_ops import get_iou, get_overlapping, \
     merge_bboxs, arg_bbox_overlapping_sets, expand_bbox, \
@@ -13,8 +13,10 @@ from .stat_bs import StatBS
 
 
 def apply_morphological_ops(frame):
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+    x = cv2.erode(frame, kernel, iterations=1)
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
-    x = cv2.dilate(frame, kernel, iterations=1)
+    x = cv2.dilate(x, kernel, iterations=1)
     kernel = np.ones((10, 10), np.uint8)
     x = cv2.erode(x, kernel, iterations=1)
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(30,30))
@@ -139,11 +141,17 @@ class MultiObjectTracker:
             mask[np.where(obj.mask == 1)] = 1
         return mask
 
-    def get_new_bboxs(self, frame_rgb):
+    def set_latest_window_frame(self, frame_rgb):
         frame = cv2.cvtColor(frame_rgb, cv2.COLOR_BGR2GRAY)
 
         self.statbased.apply(frame)
-        bg = self.statbased.get_bmask(frame)
+
+    def get_new_bboxs(self, frame_rgb):
+        frame = cv2.cvtColor(frame_rgb, cv2.COLOR_BGR2GRAY)
+
+        # bg = self.statbased.get_bmask(frame)
+        bg, _, _ = self.statbased.get_uncertainty_maps(frame)
+        bg = rescal_to_image(bg)  
 
         mask = apply_morphological_ops(bg).astype('uint8')
         labeled_mask = skimage.measure.label(np.where(mask > 0 , 1, 0)) #, connectivity=2)

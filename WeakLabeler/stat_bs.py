@@ -11,12 +11,11 @@ def threshold(frame, t):
 
     return res
 
-
-class mean_var_window:
+class FrameWindow:
     def __init__(self, shape, window_size=15):
         self.window_size = window_size
         self.shape = shape
-        self.window = [np.zeros(self.shape, np.float32) for _ in range(self.window_size)]
+        self.window = [None for _ in range(self.window_size)]
         self.index = 0
         self.num = 0
 
@@ -30,11 +29,16 @@ class mean_var_window:
         
         self.window[self.index] = frame.astype('float32')
         self.index += 1
-        self.fix_index()
+        self.index = self.fix_index(self.index)
         self.inc_num()
         
-    def fix_index(self):
-        self.index = self.index % self.window_size
+    def fix_index(self, index):
+        return index % self.window_size
+
+# TODO: convert to functional programming instead of class
+class mean_var_window(FrameWindow):
+    def __init__(self, shape, window_size=15):
+        super().__init__(shape, window_size)
 
     def get_var(self):
         return np.var(self.window[:self.num], axis=0)
@@ -59,7 +63,7 @@ class mean_var_window:
 
 class StatBS:
     def __init__(self, shape):
-        self.longmvobj = mean_var_window(shape, window_size=200)
+        self.longmvobj = mean_var_window(shape, window_size=100)
         self.long_mean = None
         self.long_var = None
         self.frame = None
@@ -82,7 +86,7 @@ class StatBS:
 
         certain_fore = np.zeros(self.long_mean.shape, np.uint8)
         certain_fore[np.where(
-                np.abs(frame.astype(np.float32) - self.long_mean) > (2 * np.sqrt(self.long_var))
+                np.abs(frame.astype(np.float32) - self.long_mean) > (2.5 * np.sqrt(self.long_var))
             )] = 1
         certain_fore[np.where(self.long_var < var_threshold)] = 0
 
