@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Set
 from skimage.transform import resize
 from scipy.stats import wasserstein_distance
 import numpy as np
@@ -189,6 +189,9 @@ class Matcher:
             self.unique_patches.append(uniqueBox(img, unique_boxes))
             self.frame_passed_per_frame.append(0)
 
+        patches_to_drop = self._get_redundant_patches()
+        self._drop_patches(patches_to_drop)
+
         return unique_boxes
 
     def _get_in_frame_uniques(self, img, bboxes):
@@ -196,10 +199,10 @@ class Matcher:
 
         similarity_sets = [[] for _ in bboxes]
         for i, ibox in enumerate(bboxes):
-            patch = crop_patch(img, ibox)
+            # patch = crop_patch(img, ibox)
             for j, jbox in enumerate(bboxes):
                 if i != j:
-                    ref_patch = crop_patch(img, jbox)
+                    # ref_patch = crop_patch(img, jbox)
                     # if self._is_similar_img(patch, ref_patch) or \
                     #    self._is_similar_box(ibox, jbox):
                     if self._is_similar_box(ibox, jbox):
@@ -223,26 +226,25 @@ class Matcher:
         for box in bboxes:
             patch = crop_patch(img, box)
             similar = False
-            for unq in self.unique_patches:
+            for fidx, unq in enumerate(self.unique_patches):
                 ref_img = unq.image
-                for ref_box in unq.bboxes:
-                    # if self._is_similar_box(box, ref_box):
-                    #     similar = True
-                    #     break
-
+                for bidx, ref_box in enumerate(unq.bboxes):
                     ref_patch = crop_patch(ref_img, ref_box)
                     if self._is_similar_img(patch, ref_patch):
                         similar = True
                         break
+
+                if similar:
+                    break
 
             if not similar:
                 unique_boxes.append(box)
         
         return unique_boxes
 
-    def _is_similar_box(self, box1, box2):
+    def _is_similar_box(self, box1, box2, threshold=(256/3)*2):
         dist = self._box_shift_distance(box1, box2)
-        if dist <= (256/4)*2:
+        if dist <= threshold:
             return True
         return False
 
@@ -264,6 +266,30 @@ class Matcher:
             kidx = int(kidx)
             unp.append(self.unique_patches[kidx])
             fppf.append(self.frame_passed_per_frame[kidx])
+
+        self.unique_patches = unp
+        self.frame_passed_per_frame = fppf
+
+    def _get_redundant_patches(self):
+        unique_patches_to_drop = [set() for _ in self.unique_patches]
+        for fidx, unq in enumerate(self.unique_patches):
+            for fidx1, unq1 in enumerate(self.unique_patches[fidx+1:]):
+                for bidx, ref_box in enumerate(unq.bboxes):
+                    for bidx1, ref_box1 in enumerate(unq1.bboxes):
+                        if self._is_similar_box(ref_box, ref_box1, threshold=(265/2)):
+                            unique_patches_to_drop[fidx].add(bidx)
+
+        return unique_patches_to_drop
+
+    def _drop_patches(self, patch_list: List[Set[int]]):
+        unp = []
+        fppf = []
+        for idx, unq in enumerate(self.unique_patches):
+            unb = [unq.bboxes[i] for i in range(len(unq.bboxes)) if i not in patch_list[idx]]
+            if len(unb) > 0:
+              unq.bboxes = unb
+              unp.append(unq)
+              fppf.append(self.frame_passed_per_frame[idx])
 
         self.unique_patches = unp
         self.frame_passed_per_frame = fppf
