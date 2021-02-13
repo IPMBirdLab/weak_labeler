@@ -1,6 +1,7 @@
 from __future__ import print_function
 import cv2
 import numpy as np
+import math
 import time
 
 import sys
@@ -25,7 +26,7 @@ def display(image):
         
 
 if __name__ == "__main__":
-    filename = "/etc/ext/mnt/ext/Drive\ D/work/IPM/data/5002-02\ large.m4v"
+    filename = "/home/devuser/Documents/workspace/data/experiment5/experiment5_1600_1200.m4v"
     reader = H264LossLessReader(input_filename=filename,
                                 width_height=None,
                                 fps=None)
@@ -54,6 +55,7 @@ if __name__ == "__main__":
         if motracker is None:
             motracker = MultiObjectTracker(frame_c.shape[:-1])
 
+        motracker.set_latest_window_frame(frame_c)
         motracker.update(frame_c)
         print(f"****currently tracking objects #{len(motracker.objects)}****")
 
@@ -95,24 +97,54 @@ if __name__ == "__main__":
             cv2.rectangle(unique_patched_res, (box[0], box[1]), (box[2], box[3]), (0, 0, 255), 2)
 
 
+        print(f"****current frames in history #{len(matcher.unique_patches)}****")
+        bbox_history = []
+        for unq in matcher.unique_patches:
+            for box in unq.bboxes:
+                bbox_history.append(box)
+
+        history_patches = frame_c.copy()
+        for box in bbox_history:
+            cv2.rectangle(history_patches, (box[0], box[1]), (box[2], box[3]), (0, 0, 255), 2)
+
+
+        bg = motracker.statbased.get_bmask(cv2.cvtColor(frame_c, cv2.COLOR_BGR2GRAY))
+        mean = motracker.statbased.long_mean
+        var = motracker.statbased.long_var
+
+        fore, back, uncer = motracker.statbased.get_uncertainty_maps(cv2.cvtColor(frame_c, cv2.COLOR_BGR2GRAY))
+
+
         frame_list = [cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB),
                         patched_res,
-                        unique_patched_res]
+                        unique_patched_res,
+                        cv2.cvtColor(bg, cv2.COLOR_GRAY2RGB),
+                        history_patches,
+                        cv2.cvtColor(var, cv2.COLOR_GRAY2RGB),
+                        cv2.cvtColor(rescal_to_image(fore), cv2.COLOR_GRAY2RGB),
+                        cv2.cvtColor(rescal_to_image(back), cv2.COLOR_GRAY2RGB),
+                        cv2.cvtColor(rescal_to_image(uncer), cv2.COLOR_GRAY2RGB)]
         texts = [f"mask({count})",
                 "patches",
-                "unique patches"]
+                "unique patches",
+                "background",
+                "history",
+                "variance",
+                "foreground",
+                "background",
+                "uncertain"]
         res_frame, res_shape = frames_to_multiscene(frame_list,
                                                     texts=texts,
                                                     resulting_frame_shape=res_frame_shape,
-                                                    method='horizontal',
-                                                    grid_dim=(1, 3),
+                                                    method='grid',
+                                                    grid_dim=(3, 3),
                                                     resizer_func=resizer_func)
     
 
         # if writer is None:
         #     writer = H264LossLessSaver("multiframe",
         #                                 (res_shape[1], res_shape[0]),
-        #                                 20,
+        #                                 10,
         #                                 compression_rate=25)
         # writer.write(res_frame)
         
@@ -132,7 +164,7 @@ if __name__ == "__main__":
 
         for i, box in enumerate(unique_bboxes):
             res = frame_c[box[1]:box[3], box[0]:box[2]]
-            cv2.imwrite(f"res/{count}_{i}.png", res, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+            cv2.imwrite(f"/home/devuser/Documents/workspace/data/experiment5/res/{count}_{i}.png", res, [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
         # if count > 100:
         #     break
