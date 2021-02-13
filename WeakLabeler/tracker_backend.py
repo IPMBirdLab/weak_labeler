@@ -127,10 +127,11 @@ class ObjectToTrack:
 
 
 class MultiObjectTracker:
-    def __init__(self, shape):
+    def __init__(self, shape, max_trackers=30):
         self.shape = shape
         self.statbased = StatBS(shape)
         self.objects = []
+        self.max_trackers = max_trackers
 
     def get_bboxs(self):
         return [obj.bbox for obj in self.objects]
@@ -196,6 +197,10 @@ class MultiObjectTracker:
         for i in del_idxs:
             del self.objects[i]
 
+    def _drop_extra(self):
+        while len(self.objects) > self.max_trackers:
+            self.objects.pop(0)
+
     def update(self, frame_rgb):
         if len(self.objects) > 0:
             self.update_tracked_bboxs(frame_rgb)
@@ -225,3 +230,4 @@ class MultiObjectTracker:
                 self.objects.append(obj)
 
         self.merge_overlapping_objects(frame_rgb)
+        self._drop_extra()
