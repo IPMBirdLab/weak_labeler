@@ -36,7 +36,7 @@ def _normalize_exposure(img):
   Normalize the exposure of an image.
   '''
   img = img.astype(int)
-  hist = get_histogram(img)
+  hist = _get_histogram(img)
   # get the sum of vals accumulated by each position in hist
   cdf = np.array([sum(hist[:i+1]) for i in range(len(hist))])
   # determine the normalization values for each unit of the cdf
@@ -74,8 +74,8 @@ def earth_movers_distance(img_a, img_b):
   @returns:
     TODO
   '''
-  hist_a = get_histogram(img_a)
-  hist_b = get_histogram(img_b)
+  hist_a = _get_histogram(img_a)
+  hist_b = _get_histogram(img_b)
 
   return wasserstein_distance(hist_a, hist_b)
 
@@ -123,6 +123,11 @@ def sift_sim(img_a, img_b):
   # find the keypoints and descriptors with SIFT
   kp_a, desc_a = orb.detectAndCompute(img_a, None)
   kp_b, desc_b = orb.detectAndCompute(img_b, None)
+
+  # TODO: a better fix is requiered. this is a quick fix for getting a None desc
+  # causing error
+  if desc_a is None or desc_b is None:
+    return 1
 
   # initialize the bruteforce matcher
   bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
