@@ -2,6 +2,8 @@
 .ssh
 # log and data files
 *.pkl
+# kdiff3 backup files
+*.orig
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

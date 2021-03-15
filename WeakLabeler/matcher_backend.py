@@ -276,7 +276,7 @@ class Matcher:
             for fidx1, unq1 in enumerate(self.unique_patches[fidx+1:]):
                 for bidx, ref_box in enumerate(unq.bboxes):
                     for bidx1, ref_box1 in enumerate(unq1.bboxes):
-                        if self._is_similar_box(ref_box, ref_box1, threshold=(265/2)):
+                        if self._is_similar_box(ref_box, ref_box1, threshold=(265/3)):
                             unique_patches_to_drop[fidx].add(bidx)
 
         return unique_patches_to_drop
