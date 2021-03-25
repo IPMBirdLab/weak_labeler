@@ -2,7 +2,7 @@ import numpy as np
 from VideoToolkit.tools import get_cv_resize_function, bbox_from_mask, rescal_to_image
 
 
-def apply_threshold(frame, t):
+def threshold(frame, t):
     res = np.zeros(frame.shape, np.uint8)
     mask = np.where(frame > t)
     res[mask] = 1
@@ -77,10 +77,8 @@ class StatBS:
         self.long_mean = self.longmvobj.get_mean()
         self.long_var = self.longmvobj.get_var()
 
-    def get_bmask(self, frame, threshold=10):
-        return rescal_to_image(
-            apply_threshold(np.abs(self.long_mean - frame), threshold)
-        )
+    def get_bmask(self, frame):
+        return rescal_to_image(threshold(np.abs(self.long_mean - frame), 10))
 
     def get_uncertainty_maps(self, frame):
         mtx = np.matrix(self.long_var)

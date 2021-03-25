@@ -124,8 +124,6 @@ def sift_sim(img_a, img_b):
   kp_a, desc_a = orb.detectAndCompute(img_a, None)
   kp_b, desc_b = orb.detectAndCompute(img_b, None)
 
-  # TODO: a better fix is requiered. this is a quick fix for getting a None desc
-  # causing error
   if desc_a is None or desc_b is None:
     return 1
 
