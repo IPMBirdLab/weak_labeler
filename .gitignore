@@ -51,3 +51,6 @@ venv.bak/
 
 # VSCode project settins
 .vscode/
+
+# ssh keys
+.ssh/
