@@ -103,7 +103,7 @@ class StatBS:
         certain_back[np.where(self.long_var < var_threshold)] = 1
 
         uncertain = np.abs(frame.astype(np.float32) - self.long_mean)
-        uncertain[np.where(certain_back == 1)] == 0
-        uncertain[np.where(certain_fore == 1)] == 0
+        # uncertain[np.where(certain_back == 1)] == 0
+        # uncertain[np.where(certain_fore == 1)] == 0
 
         return certain_fore, certain_back, uncertain

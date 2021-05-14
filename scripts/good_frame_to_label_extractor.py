@@ -29,10 +29,9 @@ def display(image):
         breakeyboard = cv2.waav
 
 
+file_num = 30
 if __name__ == "__main__":
-    filename = (
-        "/home/devuser/Documents/workspace/data/experiment13/experiment13_1600_1200.m4v"
-    )
+    filename = f"/workspace8/data/new/experiment{file_num}_1600_1200.m4v"
     reader = H264LossLessReader(input_filename=filename, width_height=None, fps=None)
 
     writer = None
@@ -123,19 +122,26 @@ if __name__ == "__main__":
             resizer_func=resizer_func,
         )
 
-        # if writer is None:
-        #     writer = H264LossLessSaver("multiframe",
-        #                                 (res_shape[1], res_shape[0]),
-        #                                 10,
-        #                                 compression_rate=25)
-        # writer.write(res_frame)
+        if writer is None:
+            writer = H264LossLessSaver(
+                f"/workspace8/data/weak_label_videos/multiframe{file_num}",
+                (res_shape[1], res_shape[0]),
+                10,
+                compression_rate=25,
+            )
+        writer.write(res_frame)
 
-        display(res_frame)
+        # display(res_frame)
 
         if len(unique_bboxes) > 0:
             cv2.imwrite(
-                f"/home/devuser/Documents/workspace/data/experiment13/frames/{count}.png",
+                f"/workspace8/data/pre_processed/experiment15_t/frames/{count}.png",
                 frame_c,
+                [cv2.IMWRITE_PNG_COMPRESSION, 0],
+            )
+            cv2.imwrite(
+                f"/workspace8/data/pre_processed/experiment{file_num}/objness/{count}.png",
+                uncer,
                 [cv2.IMWRITE_PNG_COMPRESSION, 0],
             )
 
